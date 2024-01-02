@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytesize::ByteSize;
-use dx_cli::my_module::{get_folder_size, run_apple_script};
+use dx_cli::my_module::get_folder_size;
 
 use crate::config;
 

@@ -6,7 +6,6 @@ const char* executeAppleScript(const char *script) {
     NSDictionary *errorDict;
     NSAppleEventDescriptor *result = [appleScript executeAndReturnError:&errorDict];
     if (errorDict) {
-        NSLog(@"AppleScript Error: %@", errorDict);
         return strdup([[errorDict description] UTF8String]);
     }
     if (result) {
