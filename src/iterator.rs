@@ -4,26 +4,12 @@ use std::{
 };
 
 use bytesize::ByteSize;
+use dx_cli::my_module::{run_apple_script, get_folder_size};
 
 use crate::config;
 
 extern crate libc;
 // use libc::c_char;
-use std::ffi::CString;
-
-extern "C" {
-    fn executeAppleScript(script: *const libc::c_char) -> *const libc::c_char;
-}
-
-pub fn run_apple_script(script: &str) -> String {
-    let c_script = CString::new(script).expect("CString::new failed");
-    unsafe {
-        let result = executeAppleScript(c_script.as_ptr());
-        std::ffi::CStr::from_ptr(result)
-            .to_string_lossy()
-            .into_owned()
-    }
-}
 
 fn get_file_size_in_bytes(path: &PathBuf) -> Result<u64, String> {
     if path.is_file() {
@@ -35,16 +21,15 @@ fn get_file_size_in_bytes(path: &PathBuf) -> Result<u64, String> {
     }
 }
 
+
+
 fn calculate_size(path: &PathBuf) -> u64 {
     if path.is_file() {
         if let Ok(file_size) = get_file_size_in_bytes(&path) {
             return file_size;
         }
     }
-    let script_template: &'static str = include_str!("./get-folder-size.template");
-    let script = script_template.replace('%', &path.to_string_lossy());
-    let result = run_apple_script(&script.as_str());
-    result.parse::<u64>().unwrap_or(0)
+    return get_folder_size(path);
 }
 
 fn pad_end(s: &str, target_length: usize, pad_char: char) -> String {
