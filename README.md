@@ -3,6 +3,9 @@
 ## Overview
 dx leverages the macOS Finder cache to rapidly compute folder sizes. Built in Rust, this utility integrates Objective C AppleScript via Foreign Function Interface (FFI), offering a significant performance boost. Experience folder sizing at speeds up to 20x faster than traditional methods like `du -sh`.
 
+![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
+
+
 ## Features
 - **Efficient Sizing**: Utilizes macOS Finder cache for ultra-fast folder size computation.
 - **Rust and Objective C Integration**: Seamlessly integrates Rust with Objective C AppleScript using FFI.
