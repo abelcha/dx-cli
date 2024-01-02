@@ -1,7 +1,6 @@
-use std::path::PathBuf;
 use lazy_static::lazy_static;
+use std::path::PathBuf;
 use structopt::StructOpt;
-
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dx")]
@@ -22,18 +21,17 @@ pub struct Opt {
     // #[structopt(short, long, default_value = "0")]
     // depth: i32,
     /// Multi-threaded
-    #[structopt(short, long, parse(try_from_str), default_value = "true")]
+    #[structopt(short, long)]
     pub multi_threaded: bool,
 
     /// Verbose
-    #[structopt(short, long, parse(try_from_str), default_value = "false")]
+    #[structopt(short, long)]
     pub verbose: bool,
     /// Paths
     #[structopt(name = "PATH", parse(from_os_str), default_value = "./")]
-
     pub paths: Vec<PathBuf>,
 }
 
 lazy_static! {
-  pub static ref OPTS: Opt = Opt::from_args();
+    pub static ref OPTS: Opt = Opt::from_args();
 }

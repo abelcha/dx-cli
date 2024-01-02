@@ -1,12 +1,13 @@
+use bytesize::ByteSize;
+use dx_cli::my_module::get_folder_size;
+use rayon::{prelude::*, ThreadPoolBuilder};
+use std::thread;
 use std::{
     fs,
     path::{Path, PathBuf},
 };
 
-use bytesize::ByteSize;
-use dx_cli::my_module::get_folder_size;
-
-use crate::config;
+use crate::config::{self, OPTS};
 
 extern crate libc;
 // use libc::c_char;
@@ -74,30 +75,24 @@ fn format_path(abs_path: &PathBuf, index: usize) -> String {
     return abs_path.to_string_lossy().into_owned();
 }
 
-pub fn process_paths(paths: Vec<PathBuf>) {
-    for (index, path) in paths.iter().enumerate() {
-        let path_formatted = format_path(path, index);
-        let size = calculate_size(&path);
-        let size_formatted = format_size(size);
-        println!(
-            "{} {}",
-            pad_end(&size_formatted, 8, ' '),
-            path_formatted,
-            // path_arg.display(),
-        );
-    }
-    // for path in paths {
-    //     let size = calculate_size(&path);
-    //     let size_formatted = format_size(size);
-    //     println!("{} {}", pad_end(&size_formatted, 8, ' '), path.display());
-    // }
+fn process_path(path: &PathBuf, index: usize) {
+    let path_formatted = format_path(path, index);
+    let size = calculate_size(&path);
+    let size_formatted = format_size(size);
+    println!("{} {}", pad_end(&size_formatted, 8, ' '), path_formatted,);
 }
 
-// pub fn process_paths(paths: Vec<PathBuf>) {
-//   // Use `par_iter` for parallel iteration
-//   paths.par_iter().for_each(|path| {
-//       let size = calculate_size(path);
-//       let size_formatted = ByteSize::b(size).to_string();
-//       println!("{} {}", pad_end(&size_formatted, 10, ' '), path.display());
-//   });
-// }
+pub fn process_paths(paths: Vec<PathBuf>) {
+    if (!config::OPTS.multi_threaded) {
+        for (index, path) in paths.iter().enumerate() {
+            process_path(path, index);
+        }
+    } else {
+        let pool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
+        pool.install(|| {
+            paths.par_iter().enumerate().for_each(|(index, path)| {
+                process_path(path, index);
+            });
+        });
+    }
+}
