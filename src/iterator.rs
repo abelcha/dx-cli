@@ -65,6 +65,9 @@ fn format_path(abs_path: &PathBuf, index: usize) -> String {
     let current_path_arg = &config::OPTS.paths[index];
     if (current_path_arg.is_relative()) {
         let file_name: &std::ffi::OsStr = abs_path.file_name().unwrap();
+        if (current_path_arg.ends_with(file_name)) {
+            return current_path_arg.to_string_lossy().into_owned();
+        }
         let joined = current_path_arg.join(file_name);
         return joined.to_string_lossy().into_owned();
     }
