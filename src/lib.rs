@@ -1,12 +1,16 @@
 pub mod my_module {
+    use once_cell::sync::Lazy;
     use std::ffi::CString;
     use std::path::PathBuf;
+    use std::sync::Mutex;
     #[link(name = "apple_script_bridge")]
     extern "C" {
         fn executeAppleScript(script: *const libc::c_char) -> *const libc::c_char;
     }
+    static APPLE_SCRIPT_EXECUTOR: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
     pub fn run_apple_script(script: &str) -> String {
+        let _lock = APPLE_SCRIPT_EXECUTOR.lock().unwrap();
         let c_script = CString::new(script).expect("CString::new failed");
         unsafe {
             let result = executeAppleScript(c_script.as_ptr());

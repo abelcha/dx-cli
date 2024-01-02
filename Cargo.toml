@@ -6,12 +6,13 @@ authors = ["Abel Chalier <abel.chalier@gmail.com>"]
 description = "faster dx with obj c ffi bindings"
 license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-# [[bin]]
-# name = "dx"
-# path = "src/main.rs"
+[[bin]]
+name = "dx"
+path = "src/main.rs"
 
 [dependencies]
 libc = "0.2.151"
 bytesize = "1.3.0"
 structopt = "0.3.26"
 lazy_static = "1.4.0"
+once_cell = "1.19.0"
