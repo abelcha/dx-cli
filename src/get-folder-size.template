@@ -1,0 +1,9 @@
+tell application "Finder"
+  set sizeBytes to size of (POSIX file "%" as alias)
+  if sizeBytes is not missing value then
+    return sizeBytes
+  else
+    set itemSize to size of (get info for "%")
+    return itemSize
+  end if
+end tell
