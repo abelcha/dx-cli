@@ -4,7 +4,7 @@ use std::{
 };
 
 use bytesize::ByteSize;
-use dx_cli::my_module::{run_apple_script, get_folder_size};
+use dx_cli::my_module::{get_folder_size, run_apple_script};
 
 use crate::config;
 
@@ -20,8 +20,6 @@ fn get_file_size_in_bytes(path: &PathBuf) -> Result<u64, String> {
         Err("The given path is not a file.".to_string())
     }
 }
-
-
 
 fn calculate_size(path: &PathBuf) -> u64 {
     if path.is_file() {
@@ -58,13 +56,19 @@ fn format_size(size: u64) -> String {
 }
 
 fn format_path(abs_path: &PathBuf, index: usize) -> String {
-    let path_arg = &config::OPTS.paths[0];
     if (config::OPTS.list) {
+        let path_arg = &config::OPTS.paths[0];
         let file_name = abs_path.file_name().unwrap();
         let joined = path_arg.join(file_name);
         return joined.to_string_lossy().into_owned();
     }
-    return path_arg.to_string_lossy().into_owned();
+    let current_path_arg = &config::OPTS.paths[index];
+    if (current_path_arg.is_relative()) {
+        let file_name: &std::ffi::OsStr = abs_path.file_name().unwrap();
+        let joined = current_path_arg.join(file_name);
+        return joined.to_string_lossy().into_owned();
+    }
+    return abs_path.to_string_lossy().into_owned();
 }
 
 pub fn process_paths(paths: Vec<PathBuf>) {
