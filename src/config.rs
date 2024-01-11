@@ -13,6 +13,10 @@ pub struct Opt {
     #[structopt(short, long)]
     pub bytes: bool,
 
+    /// Osa
+    #[structopt(short, long)]
+    pub osa: bool,
+
     // /// Human-readable
     // #[structopt(short, long)]
     // human_readable: bool,
