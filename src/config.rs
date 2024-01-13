@@ -17,6 +17,10 @@ pub struct Opt {
     #[structopt(short, long)]
     pub osa: bool,
 
+    /// scripting brigde
+    #[structopt(short, long)]
+    pub sbridge: bool,
+
     // /// Human-readable
     // #[structopt(short, long)]
     // human_readable: bool,

@@ -1,5 +1,5 @@
 use bytesize::ByteSize;
-use dx_cli::my_module::{get_folder_size, get_finder_item_size};
+use dx_cli::my_module::{get_folder_size, get_finder_item_size, get_fffs};
 use rayon::{prelude::*, ThreadPoolBuilder};
 use std::thread;
 use std::{
@@ -30,8 +30,10 @@ fn calculate_size(path: &PathBuf) -> u64 {
     }
     if (OPTS.osa) {
         return get_folder_size(path);
-    } else {
+    } else if (OPTS.sbridge) {
         return get_finder_item_size(path);
+    } else {
+        return get_fffs(path);
     }
 }
 

@@ -3,10 +3,11 @@ pub mod my_module {
     use std::ffi::CString;
     use std::path::PathBuf;
     use std::sync::Mutex;
-    #[link(name = "apple_script_bridge")]
+    #[link(name = "fffs")]
     extern "C" {
         fn executeAppleScript(script: *const libc::c_char) -> *const libc::c_char;
         fn getFinderItemSize(apath: *const libc::c_char) -> libc::c_longlong;
+        fn getFFFS(apath: *const libc::c_char) -> libc::c_longlong;
     }
     static APPLE_SCRIPT_EXECUTOR: Lazy<Mutex<()>> = Lazy::new(|| Mutex::new(()));
 
@@ -28,6 +29,15 @@ pub mod my_module {
         let resp = unsafe { getFinderItemSize(c_path.as_ptr()) };
         return resp.try_into().unwrap();
     }
+
+    pub fn get_fffs(path: &PathBuf) -> u64 {
+        let path_str = path.as_os_str().to_str().unwrap();
+
+        let c_path = CString::new(path_str).expect("CString::new failed");
+        let resp = unsafe { getFFFS(c_path.as_ptr()) };
+        return resp.try_into().unwrap();
+    }
+
 
     pub fn get_folder_size(path: &PathBuf) -> u64 {
         let script_template: &'static str = include_str!("./get-folder-size.template");
