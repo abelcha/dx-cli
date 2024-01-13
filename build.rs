@@ -2,7 +2,7 @@ use std::{env, process::Command};
 
 fn main() {
     let out_dir = env::var("OUT_DIR").unwrap();
-    let bridge_dir = "./lib"; // Path to your bridge directory
+    let bridge_dir = "./libfffs"; // Path to your bridge directory
 
     // Compile Objective-C code with ARC
     let status = Command::new("clang")
