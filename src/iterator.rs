@@ -1,7 +1,5 @@
 use bytesize::ByteSize;
-use dx_cli::my_module::{get_folder_size, get_finder_item_size, get_fffs};
-use rayon::{prelude::*, ThreadPoolBuilder};
-use std::thread;
+use dx_cli::my_module::get_fffs;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -28,13 +26,7 @@ fn calculate_size(path: &PathBuf) -> u64 {
             return file_size;
         }
     }
-    if (OPTS.osa) {
-        return get_folder_size(path);
-    } else if (OPTS.sbridge) {
-        return get_finder_item_size(path);
-    } else {
-        return get_fffs(path);
-    }
+    return get_fffs(path);
 }
 
 fn pad_end(s: &str, target_length: usize, pad_char: char) -> String {
@@ -83,22 +75,13 @@ fn format_path(abs_path: &PathBuf, index: usize) -> String {
 
 fn process_path(path: &PathBuf, index: usize) {
     let path_formatted = format_path(path, index);
-    let size = calculate_size(&path);
+    let size: u64 = calculate_size(&path);
     let size_formatted = format_size(size);
     println!("{} {}", pad_end(&size_formatted, 8, ' '), path_formatted,);
 }
 
 pub fn process_paths(paths: Vec<PathBuf>) {
-    if (!config::OPTS.multi_threaded) {
-        for (index, path) in paths.iter().enumerate() {
-            process_path(path, index);
-        }
-    } else {
-        let pool = ThreadPoolBuilder::new().num_threads(4).build().unwrap();
-        pool.install(|| {
-            paths.par_iter().enumerate().for_each(|(index, path)| {
-                process_path(path, index);
-            });
-        });
+    for (index, path) in paths.iter().enumerate() {
+        process_path(path, index);
     }
 }

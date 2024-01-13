@@ -13,13 +13,6 @@ pub struct Opt {
     #[structopt(short, long)]
     pub bytes: bool,
 
-    /// Osa
-    #[structopt(short, long)]
-    pub osa: bool,
-
-    /// scripting brigde
-    #[structopt(short, long)]
-    pub sbridge: bool,
 
     // /// Human-readable
     // #[structopt(short, long)]
@@ -28,9 +21,6 @@ pub struct Opt {
     // /// Depth
     // #[structopt(short, long, default_value = "0")]
     // depth: i32,
-    /// Multi-threaded
-    #[structopt(short, long)]
-    pub multi_threaded: bool,
 
     /// Verbose
     #[structopt(short, long)]
