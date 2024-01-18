@@ -1,1 +1,1 @@
-const long long getFFFS(const char *path);
+const long long getFinderFastFolderSize(const char *path);

@@ -1,5 +1,5 @@
 use bytesize::ByteSize;
-use dx_cli::my_module::get_fffs;
+use dx_cli::fffs::get_finder_fast_folder_size;
 use std::{
     fs,
     path::{Path, PathBuf},
@@ -26,7 +26,7 @@ fn calculate_size(path: &PathBuf) -> u64 {
             return file_size;
         }
     }
-    return get_fffs(path);
+    return get_finder_fast_folder_size(path);
 }
 
 fn pad_end(s: &str, target_length: usize, pad_char: char) -> String {

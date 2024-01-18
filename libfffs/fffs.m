@@ -1,7 +1,7 @@
 #include <Carbon/Carbon.h>
 #import <Foundation/Foundation.h>
 
-long long getFFFS(const char *argPath) {
+long long getFinderFastFolderSize(const char *argPath) {
     NSString *file = [NSString stringWithUTF8String:argPath];
     CFURLRef url = (__bridge CFURLRef)[NSURL fileURLWithPath:file];
     Boolean isApplication = [[file pathExtension] isEqualToString:@"app"];
