@@ -6,7 +6,7 @@ pub mod fffs {
         fn getFinderFastFolderSize(apath: *const libc::c_char) -> libc::c_longlong;
     }
 
-    pub fn __get_finder_fast_folder_size(path: &PathBuf) -> u64 {
+    pub fn get_finder_fast_folder_size(path: &PathBuf) -> u64 {
         let path_str = path.as_os_str().to_str().unwrap();
 
         let c_path = CString::new(path_str).expect("CString::new failed");
