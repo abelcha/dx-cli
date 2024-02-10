@@ -22,6 +22,10 @@ pub struct Opt {
     // #[structopt(short, long, default_value = "0")]
     // depth: i32,
 
+    /// Dsp
+    #[structopt(short, long)]
+    pub dsp: bool,
+
     /// Verbose
     #[structopt(short, long)]
     pub verbose: bool,

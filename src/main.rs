@@ -8,6 +8,9 @@
 mod config;
 mod iterator;
 mod processor;
+mod ds_parser;
+mod ds_result;
+mod byte_buffer;
 
 // use config::Opt;
 use lazy_static::lazy_static;
