@@ -1,6 +1,10 @@
+#![allow(non_upper_case_globals)]
+use color_print::cformat;
 use lazy_static::lazy_static;
 use std::path::PathBuf;
 use structopt::StructOpt;
+use strum::{EnumString, EnumVariantNames, VariantNames};
+use strum_macros::Display;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dx")]
@@ -13,6 +17,33 @@ pub struct Opt {
     #[structopt(short, long)]
     pub bytes: bool,
 
+    /// Sort by size
+    #[structopt(long)]
+    pub sort: bool,
+
+    /// Traces
+    #[structopt(long)]
+    pub trace: bool,
+
+    /// Performance
+    #[structopt(short, long)]
+    pub perf: bool,
+
+    /// directory only
+    #[structopt(long)]
+    pub dironly: bool,
+
+    #[structopt(
+            long,
+            short,
+            possible_values = Strategy::VARIANTS,
+            case_insensitive = true,
+            max_values = 3,
+            min_values = 1,
+        )]
+    pub strategy: Vec<Strategy>,
+
+    // pub default_strategies = vec![Strategy::Aev, Strategy::DStore, Strategy::Live];
 
     // /// Human-readable
     // #[structopt(short, long)]
@@ -21,11 +52,6 @@ pub struct Opt {
     // /// Depth
     // #[structopt(short, long, default_value = "0")]
     // depth: i32,
-
-    /// Dsp
-    #[structopt(short, long)]
-    pub dsp: bool,
-
     /// Verbose
     #[structopt(short, long)]
     pub verbose: bool,
@@ -34,6 +60,26 @@ pub struct Opt {
     pub paths: Vec<PathBuf>,
 }
 
+#[derive(EnumString, VariantNames, Debug, Display, Clone, Copy)]
+#[strum(serialize_all = "lowercase")]
+pub enum Strategy {
+    Aev,
+    Dstore,
+    Live,
+    // Osa,
+}
+
+impl Strategy {
+    pub fn to_colored_short_name(&self) -> String {
+        match self {
+            Strategy::Aev => cformat!("<cyan>[aev]"),
+            Strategy::Dstore => cformat!("<cyan>[dst]"),
+            Strategy::Live => cformat!("<cyan>[liv]"),
+        }
+    }
+}
+
 lazy_static! {
-    pub static ref OPTS: Opt = Opt::from_args();
+    #[derive(Debug, Clone, Copy)]
+    pub static ref ArgOpts: Opt = Opt::from_args();
 }

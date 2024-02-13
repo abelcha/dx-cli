@@ -5,13 +5,13 @@
     dead_code,
     unused_parens
 )]
+// pub mod config;
 mod config;
 mod iterator;
 mod processor;
-mod ds_parser;
-mod ds_result;
-mod byte_buffer;
 
+
+use color_print::cprintln;
 // use config::Opt;
 use lazy_static::lazy_static;
 use structopt::StructOpt;
@@ -23,10 +23,16 @@ use std::{
 
 fn main() {
     let now = Instant::now();
-    // let opt: Opt = Opt::from_args();
+    // let args_opts: Opt = Opt::from_args();
+    // if (config::ArgOpts.strategy.len() == 0) {
+    //     config::ArgOpts.strategy = vec![config::Strategy::Aev, config::Strategy::DStore, config::Strategy::Live];
+    //     println!("No strategy specified");
+    //     return;
+    // }
     processor::process();
+    // println!("{:?}", config::ArgOpts.strategy[0]);
 
-    if (config::OPTS.verbose) {
-        println!("time elapsed: {}", now.elapsed().as_secs_f64());
+    if (config::ArgOpts.verbose) {
+        cprintln!("<bold>time elapsed: <yellow>{:.3}ms</yellow>", now.elapsed().as_secs_f32());
     }
 }

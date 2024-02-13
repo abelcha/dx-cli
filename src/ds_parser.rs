@@ -11,13 +11,12 @@ use chrono::{TimeZone, Utc};
 use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH}; // Chrono is a popular date-time library in Rust
 
-// mod byte_buffer;
-// mod ds_result;
-extern crate chrono; // This line declares the chrono crate
+extern crate chrono;
 extern crate color_print;
-// use chrono::TimeZone;
 use crate::byte_buffer::ByteBuffer;
-use crate::ds_result::ResultData;
+use crate::ds_result::{
+    get_cached_property, save_result_data, CacheStatus, ResultData, RESULT_DATA_MANAGER,
+};
 use color_print::{cprint, cprintln};
 
 use std::collections::HashMap;
@@ -26,17 +25,14 @@ use std::io::{Error, Read};
 use std::{error, io, time};
 
 enum ParsedValue {
-    // Bool(bool),
-    // Short(u32),
-    // Long(u32),
-    // Comp(u64),
-    // Dutch(u64),
-    // Type(String),
-    // Blob(Vec<u8>),
-    // Ustr(String),
-    Intx(u64),
-    Unrecognized,
+    // ModifiedDate(u64),
+    // LogicalSize(u64),
+    // PhysicalSize(u64),
+    // Intx(u64),
+    UInt(u64, ModType),
+    Unhandled,
 }
+
 fn parse_header(buffer: &mut ByteBuffer) -> io::Result<(u32, u32)> {
     let alignment: u32 = buffer.read_uint32()?;
     assert_eq!(alignment, 0x00000001);
@@ -78,7 +74,6 @@ fn parse_allocator(buffer: &mut ByteBuffer, alloc_offset: u32) -> io::Result<(u3
             "Key 'DSDB' not found in table of contents",
         ));
     }
-    // cprintln!("<bold>- Directory:</bold> <cyan>{:?}</cyan>", directory);
     let master_id = directory["DSDB"];
 
     Ok((master_id, offsets))
@@ -154,41 +149,74 @@ fn vec_to_u64_be(bytes: Vec<u8>) -> Result<u64, &'static str> {
     Ok(u64::from_be_bytes(bytes_array))
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub enum ModType {
+    ModifiedDate,
+    LogicalSize,
+    PhysicalSize,
+    Unhandled,
+}
+
+impl ModType {
+    pub fn to_str(&self) -> &str {
+        match self {
+            ModType::ModifiedDate => "modified_date",
+            ModType::LogicalSize => "logical_size",
+            ModType::PhysicalSize => "physical_size",
+            ModType::Unhandled => "unhandled",
+        }
+    }
+    pub fn from_str(s: &str) -> Self {
+        match s {
+            "moDD" => ModType::ModifiedDate,
+            "modD" => ModType::ModifiedDate,
+            "ph1S" => ModType::PhysicalSize,
+            "phyS" => ModType::PhysicalSize,
+            "lg1S" => ModType::LogicalSize,
+            "logS" => ModType::LogicalSize,
+            // Handle unexpected or default case
+            _ => ModType::Unhandled,
+        }
+    }
+}
+
 fn parse_datatype(
     data_type: &str,
     field: &str,
     buffer: &mut ByteBuffer,
 ) -> io::Result<(ParsedValue)> {
+    let field_type = ModType::from_str(field);
+
     match data_type {
         "bool" => {
             let value = buffer.read_uint8()? != 0;
-            Ok(ParsedValue::Unrecognized)
+            Ok(ParsedValue::Unhandled)
         }
         "shor" | "long" => {
             let value = buffer.read_uint32()?;
-            Ok(ParsedValue::Unrecognized)
+            Ok(ParsedValue::Unhandled)
         }
         "comp" | "dutc" => {
             let value = buffer.read_uint64()?;
-            if (field == "ph1S" || field == "phyS") {
-                Ok(ParsedValue::Intx(value))
+            if (field_type == ModType::PhysicalSize || field_type == ModType::LogicalSize) {
+                return Ok(ParsedValue::UInt(value, field_type));
             } else {
-                Ok(ParsedValue::Unrecognized)
+                return Ok(ParsedValue::Unhandled);
             }
         }
         "type" => {
             let value = buffer.read_string(4)?;
-            Ok(ParsedValue::Unrecognized)
+            Ok(ParsedValue::Unhandled)
         }
         "blob" => {
             let data_length = buffer.read_uint32()?;
             let value = buffer.read_uint8_array(data_length as usize)?;
-            // only for field == "moDD" || field == "modD":
-            if field == "moDD" || field == "modD" {
+
+            if field_type == ModType::ModifiedDate {
                 let timestamp = parse_blob_to_datetime(&value);
-                Ok(ParsedValue::Intx(timestamp))
+                Ok(ParsedValue::UInt(timestamp, field_type))
             } else {
-                Ok(ParsedValue::Unrecognized)
+                Ok(ParsedValue::Unhandled)
             }
         }
         "ustr" => {
@@ -196,10 +224,13 @@ fn parse_datatype(
             let value = buffer
                 .read_string_utf16_be(data_length as usize * 2)
                 .unwrap();
-            Ok(ParsedValue::Unrecognized)
+            Ok(ParsedValue::Unhandled)
         }
         // throw here
-        _ => Ok(ParsedValue::Unrecognized),
+        _ => Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            format!("Unhandled data type: {}", data_type),
+        )),
     }
 }
 
@@ -209,9 +240,7 @@ fn parse_b_tree(
     offsets: Vec<u32>,
     node_id: u32,
     depth: u32,
-    // rtn: HashMap<String, HashMap<String, Vec<u8>>>,
 ) -> io::Result<()> {
-    // println!(">>>>>>>>>>>>>>>parse_b_tree {}", depth);
     let offset_and_size = offsets[node_id as usize];
     let next_cursor = align_and_adjust_cursor(offset_and_size);
     buffer.reset();
@@ -219,8 +248,10 @@ fn parse_b_tree(
 
     let next_id = buffer.read_uint32()?;
     let num_records = buffer.read_uint32()?;
-
-    for _ in 0..num_records - 1 {
+    // cprintln!("num_records: {}", num_records);
+    // cprintln!("next_id: {}", next_id);
+    for _ in 0..num_records {
+        // println!("===========looping");
         if next_id != 0 {
             let child_id = buffer.read_uint32()?;
             let current_cursor = buffer.byte_offset();
@@ -230,6 +261,7 @@ fn parse_b_tree(
         }
         let name_length = buffer.read_uint32()?;
         if name_length > buffer.bytes_remaining() {
+            cprintln!("<bold> - error: <red>Not enough bytes</red></bold>");
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "Not enough bytes",
@@ -242,17 +274,19 @@ fn parse_b_tree(
         let dtype = buffer.read_string(4)?;
 
         match parse_datatype(&dtype, &field, buffer) {
-            Ok(ParsedValue::Intx(value)) => {
-                result_data.add_record(&name, &field, value);
-                // cprintln!("<bold> - {}: <green>{}</green></bold>", field, value);
+            Ok(ParsedValue::UInt(value, modetype)) => {
+                result_data.add_record(&name, &modetype.to_str(), value)
             }
-            Ok(ParsedValue::Unrecognized) => {
-                // cprintln!("<bold> - value: <red>Unrecognized</red></bold>");
-            }
-            Err(e) => {
-                cprintln!("<bold> - error: <red>{}</red></bold>", e);
-            }
+            Ok(ParsedValue::Unhandled) => {}
+            Err(e) => cprintln!("<bold> - error: <red>{}</red></bold>", e),
         }
+    }
+    if (next_id > 0) {
+        // println!("STILL NEXTID next_id: {}", next_id);
+        // let current_cursor = buffer.byte_offset();
+        parse_b_tree(buffer, result_data, offsets.clone(), next_id, depth + 1)?;
+        // buffer.reset();
+        // buffer.skip(current_cursor);
     }
     Ok(())
 }
@@ -263,6 +297,7 @@ pub fn get_ds_cache(path: &Path) -> io::Result<ResultData> {
     } else {
         path.to_path_buf()
     };
+    // println!("Builing dstore {}", path.to_str().unwrap());
 
     if !ds_store_path.exists() {
         return Err(io::Error::new(
@@ -280,12 +315,61 @@ pub fn get_ds_cache(path: &Path) -> io::Result<ResultData> {
     let (master_id, offsets) = parse_allocator(&mut buffer, alloc_offset)?;
     let root_id = parse_master_node(&mut buffer, offsets[master_id as usize])?;
     parse_b_tree(&mut buffer, &mut result_data, offsets, root_id, 0)?;
-    // print results:
-    cprintln!("<bold>Results:</bold>");
-    for (key, value) in result_data.get_files().iter() {
-        cprintln!("<bold> - {}: <green>{:?}</green></bold>", key, value);
-    }
+    print_result_data(&result_data);
     Ok(result_data)
+}
+
+pub fn get_file_prop(path: &Path, modtype: ModType) -> Result<i64, String> {
+    let dsfile = path.parent().unwrap().join(".DS_Store");
+    let filename = path.file_name().unwrap().to_string_lossy();
+
+    let resp = get_cached_property(dsfile.to_str().unwrap(), &filename, modtype.to_str());
+    match resp.unwrap() {
+        CacheStatus::NotFound => {
+            // println!("Cache Not found - Continue");
+        }
+        CacheStatus::CacheMiss => {
+            // println!("CacheStatus::CacheMiss - EXIT");
+            return Err("Not found".to_string());
+        }
+        CacheStatus::CacheHit(val) => {
+            // println!("Cache hit - EXIT");
+            return Ok(val);
+        }
+    }
+
+    // let is_errr = cached_property.is_err();
+    // println!("is_errr: {}", is_errr);
+
+    // println!("CONTINUE HERE {}", path.to_str().unwrap());
+    // cached_property.and_then(|x| Ok(x));
+    // if (cached_property) {
+    //     let unwww = cached_property.unwrap();
+    //     println!("VALUE {}", unwww);
+    //     return Ok(cached_property.unwrap());
+    // }
+    // let mut manager = RESULT_DATA_MANAGER.lock().unwrap();
+    // let resda = manager.get_cache_or_create_new(&path.to_string_lossy());
+
+    // let mng = use_result_data_manager();
+
+    let result_data = get_ds_cache(&dsfile).unwrap_or(ResultData::new());
+    let rtn = result_data.get_file_property(&filename, modtype.to_str());
+
+    save_result_data(dsfile.to_str().unwrap(), result_data);
+
+    return rtn;
+
+    // let result_data = get_ds_cache(path)?;
+    // print_result_data(&result_data);
+    // Ok(())
+}
+
+pub fn print_result_data(result_data: &ResultData) {
+    // cprintln!("<bold>{} xResults:</bold>", result_data.get_files().len());
+    for (key, value) in result_data.get_files().iter() {
+        // cprintln!("<bold> - {}: <cyan>{:?}</cyan></bold>", key, value);
+    }
 }
 
 // fn main() -> io::Result<()> {

@@ -1,8 +1,9 @@
-use crate::config::{Opt, OPTS};
+// use crate::config::{Opt, ArgOpts};
 use std::path::{Path, PathBuf};
 use std::process;
 use std::{fs, io};
 
+use crate::config::{ArgOpts, Opt};
 use crate::iterator::process_paths;
 
 pub fn absolute_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
@@ -21,18 +22,22 @@ pub fn absolute_paths(paths: Vec<PathBuf>) -> Vec<PathBuf> {
         .collect()
 }
 
-
 // Reads a directory's contents and returns a Result containing a Vec<String> of paths or an error
 fn readdirone(path: &PathBuf) -> Result<Vec<PathBuf>, io::Error> {
     fs::read_dir(path)?
-        .map(|res| res.map(|e| e.path())) // Convert the DirEntry into a PathBuf
+        .map(|res| res.map(|e| e.path()))
         .collect() // Collect all the PathBuf instances into a Vec<PathBuf>
 }
 
 pub fn process() {
-    let abs_paths = absolute_paths(OPTS.paths.clone());
+    let abs_paths = absolute_paths(ArgOpts.paths.clone());
 
-    if OPTS.list && !abs_paths.is_empty() {
+    // if ArgOpts.list == true {
+    //     for path in &abs_paths {
+    //         println!("{}", path.display());
+    //     }
+    // }
+    if ArgOpts.list && !abs_paths.is_empty() {
         // Check if the first path in abs_paths is a directory
         let first_path = &abs_paths[0];
         if Path::new(first_path).is_dir() {
