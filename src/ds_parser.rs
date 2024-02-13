@@ -9,7 +9,7 @@
 
 use chrono::{TimeZone, Utc};
 use std::path::Path;
-use std::time::{Duration, UNIX_EPOCH}; // Chrono is a popular date-time library in Rust
+use std::time::{Duration, UNIX_EPOCH};
 
 extern crate chrono;
 extern crate color_print;
@@ -25,10 +25,6 @@ use std::io::{Error, Read};
 use std::{error, io, time};
 
 enum ParsedValue {
-    // ModifiedDate(u64),
-    // LogicalSize(u64),
-    // PhysicalSize(u64),
-    // Intx(u64),
     UInt(u64, ModType),
     Unhandled,
 }
@@ -130,8 +126,7 @@ fn parse_blob_to_datetime(data: &[u8]) -> u64 {
     // Calculate the datetime from the timestamp
     let mac_epoch_offset = 978307200; // seconds from UNIX_EPOCH to Mac epoch
     let timestamp_secs = num + mac_epoch_offset as f64;
-    let datetime = Utc.timestamp(timestamp_secs as i64, 0);
-    return datetime.timestamp_millis() as u64;
+    Utc.timestamp(timestamp_secs as i64, 0).timestamp_millis() as u64
 }
 
 fn vec_to_u64_be(bytes: Vec<u8>) -> Result<u64, &'static str> {
@@ -199,9 +194,9 @@ fn parse_datatype(
         "comp" | "dutc" => {
             let value = buffer.read_uint64()?;
             if (field_type == ModType::PhysicalSize || field_type == ModType::LogicalSize) {
-                return Ok(ParsedValue::UInt(value, field_type));
+                Ok(ParsedValue::UInt(value, field_type))
             } else {
-                return Ok(ParsedValue::Unhandled);
+                Ok(ParsedValue::Unhandled)
             }
         }
         "type" => {
@@ -248,8 +243,6 @@ fn parse_b_tree(
 
     let next_id = buffer.read_uint32()?;
     let num_records = buffer.read_uint32()?;
-    // cprintln!("num_records: {}", num_records);
-    // cprintln!("next_id: {}", next_id);
     for _ in 0..num_records {
         // println!("===========looping");
         if next_id != 0 {
@@ -315,7 +308,6 @@ pub fn get_ds_cache(path: &Path) -> io::Result<ResultData> {
     let (master_id, offsets) = parse_allocator(&mut buffer, alloc_offset)?;
     let root_id = parse_master_node(&mut buffer, offsets[master_id as usize])?;
     parse_b_tree(&mut buffer, &mut result_data, offsets, root_id, 0)?;
-    print_result_data(&result_data);
     Ok(result_data)
 }
 
@@ -338,51 +330,8 @@ pub fn get_file_prop(path: &Path, modtype: ModType) -> Result<i64, String> {
         }
     }
 
-    // let is_errr = cached_property.is_err();
-    // println!("is_errr: {}", is_errr);
-
-    // println!("CONTINUE HERE {}", path.to_str().unwrap());
-    // cached_property.and_then(|x| Ok(x));
-    // if (cached_property) {
-    //     let unwww = cached_property.unwrap();
-    //     println!("VALUE {}", unwww);
-    //     return Ok(cached_property.unwrap());
-    // }
-    // let mut manager = RESULT_DATA_MANAGER.lock().unwrap();
-    // let resda = manager.get_cache_or_create_new(&path.to_string_lossy());
-
-    // let mng = use_result_data_manager();
-
     let result_data = get_ds_cache(&dsfile).unwrap_or(ResultData::new());
-    let rtn = result_data.get_file_property(&filename, modtype.to_str());
-
+    let file_property_result = result_data.get_file_property(&filename, modtype.to_str());
     save_result_data(dsfile.to_str().unwrap(), result_data);
-
-    return rtn;
-
-    // let result_data = get_ds_cache(path)?;
-    // print_result_data(&result_data);
-    // Ok(())
+    file_property_result
 }
-
-pub fn print_result_data(result_data: &ResultData) {
-    // cprintln!("<bold>{} xResults:</bold>", result_data.get_files().len());
-    for (key, value) in result_data.get_files().iter() {
-        // cprintln!("<bold> - {}: <cyan>{:?}</cyan></bold>", key, value);
-    }
-}
-
-// fn main() -> io::Result<()> {
-//     let args: Vec<String> = std::env::args().collect();
-//     if args.len() < 2 {
-//         return Err(io::Error::new(
-//             io::ErrorKind::InvalidInput,
-//             "No path provided",
-//         ));
-//     }
-
-//     let path = std::path::Path::new(&args[1]);
-//     get_ds_cache(path)?;
-
-//     Ok(())
-// }

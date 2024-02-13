@@ -125,7 +125,6 @@ fn pretty_print(path_index: usize, path_result: &PathResult) {
 
 pub fn process_paths(paths: Vec<PathBuf>) {
     let vecstrats = config::ArgOpts.strategy.to_vec();
-    // print vecstrats
 
     let mapped_results = paths
         .iter()

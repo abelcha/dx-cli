@@ -43,18 +43,10 @@ pub struct Opt {
         )]
     pub strategy: Vec<Strategy>,
 
-    // pub default_strategies = vec![Strategy::Aev, Strategy::DStore, Strategy::Live];
 
-    // /// Human-readable
-    // #[structopt(short, long)]
-    // human_readable: bool,
-
-    // /// Depth
-    // #[structopt(short, long, default_value = "0")]
-    // depth: i32,
-    /// Verbose
     #[structopt(short, long)]
     pub verbose: bool,
+
     /// Paths
     #[structopt(name = "PATH", parse(from_os_str), default_value = "./")]
     pub paths: Vec<PathBuf>,
