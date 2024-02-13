@@ -34,19 +34,25 @@ pub mod fffs {
     };
     #[link(name = "fffs")]
     extern "C" {
-        fn executeAppleScript(script: *const libc::c_char) -> *const libc::c_char;
+        fn runOsaScript(script: *const libc::c_char) -> *const libc::c_char;
         fn getFinderFastFolderSize(apath: *const libc::c_char) -> libc::c_longlong;
     }
 
-    pub fn run_apple_script(script: &str) -> String {
+    pub fn run_osa(script: &str) -> String {
         // let _lock = APPLE_SCRIPT_EXECUTOR.lock().unwrap();
         let c_script = CString::new(script).expect("CString::new failed");
         unsafe {
-            let result = executeAppleScript(c_script.as_ptr());
+            let result = runOsaScript(c_script.as_ptr());
             std::ffi::CStr::from_ptr(result)
                 .to_string_lossy()
                 .into_owned()
         }
+    }
+    pub fn get_osa_folder_size(path: &PathBuf) -> Result<i64, String> {
+        let script_template: &'static str = include_str!("./get-folder-size.template");
+        let script = script_template.replace('%', &path.to_string_lossy());
+        let result = run_osa(&script.as_str());
+        result.parse::<i64>().map_err(|_| result)
     }
 
     pub fn get_finder_fast_folder_size(path: &PathBuf) -> Result<i64, String> {
@@ -58,7 +64,7 @@ pub mod fffs {
             let err = format!("Error - get_finder_fast_folder_size : {} ", resp);
             return Err(err);
         }
-        return Ok(resp);
+        Ok(resp)
     }
 
     fn get_recursive_folder_size(path: &PathBuf) -> Result<i64, String> {
@@ -71,7 +77,7 @@ pub mod fffs {
             .filter_map(|entry| entry.metadata().ok())
             .filter(|metadata| metadata.is_file())
             .fold(0, |acc, m| acc + m.len());
-        return Ok(total_size as i64);
+        Ok(total_size as i64)
     }
 
     fn get_file_size_in_bytes(path: &PathBuf) -> Result<i64, String> {
@@ -87,34 +93,45 @@ pub mod fffs {
         pub duration: Duration,
         pub strategy: Option<Strategy>,
         pub error_message: Option<String>,
+        start_time: std::time::Instant,
     }
 
     impl PathResult {
-        fn new_success(path: &PathBuf, size: i64, duration: Duration, strategy: Strategy) -> Self {
-            PathResult {
-                path: path.clone(),
-                size,
-                duration,
-                strategy: Some(strategy),
-                error_message: None,
-            }
-        }
-        fn new_error(path: &PathBuf, error_message: String) -> Self {
+        fn new(path: &PathBuf) -> Self {
             PathResult {
                 path: path.clone(),
                 size: 0,
                 duration: Duration::ZERO,
                 strategy: None,
+                error_message: None,
+                start_time: std::time::Instant::now(),
+            }
+        }
+        // This method updates the fields of an existing PathResult instance
+        fn success(&self, size: i64, strategy: Strategy) -> Self {
+            Self {
+                size,
+                duration: self.start_time.elapsed(),
+                strategy: Some(strategy),
+                ..self.clone()
+            }
+        }
+        // This method updates the fields of an existing PathResult instance
+        fn error(&self, error_message: String) -> Self {
+            // self.duration = self.start_time.elapsed();
+            Self {
                 error_message: Some(error_message),
+                ..self.clone()
             }
         }
     }
 
     pub fn process_path(path: &PathBuf, strategies: Vec<Strategy>) -> PathResult {
+        let result = PathResult::new(path);
         if (path.is_file()) {
             return get_file_size_in_bytes(path).map_or_else(
-                |err| PathResult::new_error(path, err),
-                |size| PathResult::new_success(path, size, Duration::ZERO, Strategy::Live),
+                |err| result.error(err),
+                |size| result.success(size, Strategy::Live),
             );
         }
         let strats = if strategies.len() > 0 {
@@ -125,23 +142,24 @@ pub mod fffs {
         // println!("strategy: {:?}", strats);
 
         let result = strats.iter().find_map(|strategy| {
-            let now = std::time::Instant::now();
+            // let now = std::time::Instant::now();
+            let pathres = PathResult::new(path);
             match strategy {
                 Strategy::Aev => get_finder_fast_folder_size(path)
                     .ok()
-                    .map(|size| PathResult::new_success(path, size, now.elapsed(), Strategy::Aev)),
+                    .map(|size| pathres.success(size, Strategy::Aev)),
                 Strategy::Dstore => ds_parser::get_file_prop(path, ModType::LogicalSize)
                     .ok()
-                    .map(|size| {
-                        PathResult::new_success(path, size, now.elapsed(), Strategy::Dstore)
-                    }),
+                    .map(|size| pathres.success(size, Strategy::Dstore)),
                 Strategy::Live => get_recursive_folder_size(path)
                     .ok()
-                    .map(|size| PathResult::new_success(path, size, now.elapsed(), Strategy::Live)), // Strategy::Osa => None,
+                    .map(|size| pathres.success(size, Strategy::Live)),
+                Strategy::Osa => get_osa_folder_size(path)
+                    .ok()
+                    .map(|size| pathres.success(size, Strategy::Osa)),
             }
         });
-        return result
-            .unwrap_or_else(|| PathResult::new_error(path, "No strategy worked".to_string()));
+        result.unwrap_or_else(|| PathResult::new(path).error("No strategy worked".to_string()))
     }
 
     pub fn get_fffs(path: &PathBuf) -> Result<i64, String> {

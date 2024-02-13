@@ -66,15 +66,16 @@ pub enum Strategy {
     Aev,
     Dstore,
     Live,
-    // Osa,
+    Osa,
 }
 
 impl Strategy {
     pub fn to_colored_short_name(&self) -> String {
         match self {
             Strategy::Aev => cformat!("<cyan>[aev]"),
-            Strategy::Dstore => cformat!("<cyan>[dst]"),
-            Strategy::Live => cformat!("<cyan>[liv]"),
+            Strategy::Dstore => cformat!("<green>[dst]"),
+            Strategy::Live => cformat!("<magenta>[liv]"),
+            Strategy::Osa => cformat!("<yellow>[osa]"),
         }
     }
 }

@@ -97,6 +97,7 @@ fn pretty_print(path_index: usize, path_result: &PathResult) {
         strategy,
         duration,
         error_message,
+        ..
     } = path_result;
 
     let size_formatted = format_size(*size);
