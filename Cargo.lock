@@ -135,7 +135,7 @@ dependencies = [
 
 [[package]]
 name = "dx-cli"
-version = "0.3.0"
+version = "0.3.1"
 dependencies = [
  "bytesize",
  "color-print",
