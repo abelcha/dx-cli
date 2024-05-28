@@ -137,7 +137,16 @@ pub mod fffs {
         let strats = if strategies.len() > 0 {
             strategies.clone()
         } else {
-            vec![Strategy::Aev, Strategy::Dstore, Strategy::Live]
+            match std::env::var("DX_STRATEGY") {
+                Ok(val) => match val.as_str() {
+                    "aev" => vec![Strategy::Aev],
+                    "dstore" => vec![Strategy::Dstore],
+                    "live" => vec![Strategy::Live],
+                    _ => vec![Strategy::Aev, Strategy::Dstore, Strategy::Live],
+                },
+                Err(_) => vec![Strategy::Aev, Strategy::Dstore, Strategy::Live],
+            }
+            // vec![Strategy::Aev, Strategy::Dstore, Strategy::Live]
         };
         // println!("strategy: {:?}", strats);
 
