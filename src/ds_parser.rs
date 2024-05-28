@@ -1,17 +1,6 @@
-#![allow(
-    unused_variables,
-    unreachable_code,
-    unused_imports,
-    dead_code,
-    unused_parens,
-    deprecated
-)]
-
-use chrono::{TimeZone, Utc};
 use std::path::Path;
 use std::time::{Duration, UNIX_EPOCH};
 
-extern crate chrono;
 extern crate color_print;
 use crate::byte_buffer::ByteBuffer;
 use crate::ds_result::{
@@ -31,14 +20,14 @@ enum ParsedValue {
 
 fn parse_header(buffer: &mut ByteBuffer) -> io::Result<(u32, u32)> {
     let alignment: u32 = buffer.read_uint32()?;
-    assert_eq!(alignment, 0x00000001);
+    debug_assert_eq!(alignment, 0x00000001);
     let magic: u32 = buffer.read_uint32()?;
-    assert_eq!(magic, 0x42756431);
+    debug_assert_eq!(magic, 0x42756431);
 
     let alloc_offset: u32 = 0x4 + buffer.read_uint32()?;
     let alloc_len: u32 = buffer.read_uint32()?;
     let alloc_offset_repeat: u32 = 0x4 + buffer.read_uint32()?;
-    assert_eq!(alloc_offset_repeat, alloc_offset);
+    debug_assert_eq!(alloc_offset_repeat, alloc_offset);
 
     Ok((alloc_offset, alloc_len))
 }
@@ -48,7 +37,7 @@ fn parse_allocator(buffer: &mut ByteBuffer, alloc_offset: u32) -> io::Result<(u3
     buffer.skip(alloc_offset as u64);
     let num_offsets = buffer.read_uint32()?;
     let second: u32 = buffer.read_uint32()?;
-    assert_eq!(second, 0);
+    debug_assert_eq!(second, 0);
 
     let offsets = (0..num_offsets)
         .map(|_| buffer.read_uint32().unwrap())
@@ -97,7 +86,7 @@ fn parse_master_node(buffer: &mut ByteBuffer, offset_and_size: u32) -> io::Resul
     let num_records = buffer.read_uint32()?;
     let num_nodes = buffer.read_uint32()?;
     let fifth = buffer.read_uint32()?;
-    assert_eq!(fifth, 0x1000);
+    debug_assert_eq!(fifth, 0x1000);
     Ok((root_id))
 }
 
@@ -126,7 +115,8 @@ fn parse_blob_to_datetime(data: &[u8]) -> u64 {
     // Calculate the datetime from the timestamp
     let mac_epoch_offset = 978307200; // seconds from UNIX_EPOCH to Mac epoch
     let timestamp_secs = num + mac_epoch_offset as f64;
-    Utc.timestamp(timestamp_secs as i64, 0).timestamp_millis() as u64
+    return ((timestamp_secs as u64) * 1000) ;
+    // Utc.timestamp(timestamp_secs as i64, 0).timestamp_millis() as u64
 }
 
 fn vec_to_u64_be(bytes: Vec<u8>) -> Result<u64, &'static str> {
