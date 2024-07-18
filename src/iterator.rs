@@ -116,9 +116,9 @@ fn pretty_print(path_index: usize, path_result: &PathResult) {
     let size_formatted = format_size(*size);
     let home_dir = std::env::var("HOME").unwrap();
     let path_formatted = format_path(path, path_index).replace(home_dir.as_str(), "~");
-    let pad_size = pad_start(&size_formatted, 5, ' ');
+    let pad_size = pad_end(&size_formatted, 8, ' ');
     let perf_timing = format_timing(*duration);
-
+    // let size_color :
     let strat_indicator = match (config::ArgOpts.verbose, strategy) {
         (false, _) => "".to_string(),
         (true, Some(strategy)) => strategy.to_colored_short_name(),
@@ -128,11 +128,11 @@ fn pretty_print(path_index: usize, path_result: &PathResult) {
         ),
     };
     cprintln!(
-        "{}{} <bold>{}</> {}",
+        "{}{} {}{}",
         strat_indicator,
         perf_timing,
-        pad_size,
-        path_formatted
+        color_size(&pad_size, *size),
+        color_size(&path_formatted, *size),
     );
 }
 
