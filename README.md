@@ -4,7 +4,7 @@
 _originaly made for [eza](https://github.com/eza-community/eza) `--total-size`, but cant make it build cross-plarform, so it just work standalone on mac m1 as of now_
 
 
-du vs dx
+du vs dx:
 ![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
 
 
