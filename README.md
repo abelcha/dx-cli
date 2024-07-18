@@ -1,31 +1,22 @@
-# fast directory sizing on OSX, using reverse engineered finder cache api
-
-## Overview
-
-dx leverages the obscure macOS C Finder cache to rapidly get folder sizes. Built in Rust, this utility integrates Objective C via Foreign Function Interface (FFI). Experience folder sizing at speeds up to 20x faster than traditional methods like `du -sh`.
-
 ![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
 
+How can finder show instant directory sizes, but dev tools takes 30 sec to walk though the file tree every time ?
+Its ovbious macos caches dir sizes somewhere but Apple dont provide any api or document this feature
 
-## Features
-- **Efficient Sizing**: Utilizes macOS Finder cache for ultra-fast folder size computation.
-- **Rust and Objective C Integration**: Seamlessly integrates Rust with Objective C using FFI.
-- **Multiple Methods**: if you dont want any cache you can still run dx with --live and get a recursive sizing
-- **Performance**: Outperforms `du -sh` by up to 20x in speed.
-- **User-Friendly Defaults**: Provides more intuitive defaults compared to traditional methods.
+![Screenshot 2024-07-18 at 01 33 56](https://github.com/user-attachments/assets/bf51a21e-171c-4870-a12c-1220715018c8)
 
-## Installation
-```sh
-cargo install dx-cli
-```
+Its available throught a AppleScript's getinfo methods, but it is slow and unreliable
+- libfffs (fast finder folder size) is an atempt to reverse engineer the underlying system call
+- dx-cli is a wrapper around libfffs to provide a `du` type interface (and rust FFI bindings)
 
-## Usage
-sane defaults:
-- `dx dir` is equivalent to `du -sh dir`
-- `dx dir -l` functions like `du -h dir`
 
-## Contributing
-Contributions to dx are welcome! Whether it's bug reports, feature suggestions, or code contributions, your input is valuable. See [CONTRIBUTING.md](link-to-your-contributing-guidelines) for guidelines on how to contribute.
 
-## License
-(Include information about your project's license here.)
+it provide 3 strategies that will fallback in this order by default:
+- aev (AppleEvents https://en.wikipedia.org/wiki/Apple_events), a long forgotten IPC protocol using C with Pascal strings, works well but sometimes fails on concurent calls
+- dstore .ds_store are a binary dumps of finder's internal database, finder regenerate it even if the call fails, so the combination of the two is surprisingly reliable. 
+few parser attempts have been made since the OG that first reverse engineered it in perl, but none worked for every  around nested windows placement metadata;
+i made a simpler implementation that only focus on 1st level size and dates, and works on every .ds_store i found on github code search
+- live
+fallback to classic recursive walkthrough of the file tree, safe and reliable but slow
+
+
