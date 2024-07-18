@@ -33,6 +33,6 @@ fn main() {
     // println!("{:?}", config::ArgOpts.strategy[0]);
 
     if (config::ArgOpts.verbose) {
-        cprintln!("<bold>time elapsed: <yellow>{:.3}ms</yellow>", now.elapsed().as_secs_f32());
+        cprintln!("\n<bold>time elapsed: <yellow>{:.3}ms</yellow>\n", now.elapsed().as_secs_f32());
     }
 }

@@ -137,16 +137,7 @@ pub mod fffs {
         let strats = if strategies.len() > 0 {
             strategies.clone()
         } else {
-            match std::env::var("DX_STRATEGY") {
-                Ok(val) => match val.as_str() {
-                    "aev" => vec![Strategy::Aev],
-                    "dstore" => vec![Strategy::Dstore],
-                    "live" => vec![Strategy::Live],
-                    _ => vec![Strategy::Aev, Strategy::Dstore, Strategy::Live],
-                },
-                Err(_) => vec![Strategy::Aev, Strategy::Dstore, Strategy::Live],
-            }
-            // vec![Strategy::Aev, Strategy::Dstore, Strategy::Live]
+            vec![Strategy::Aev, Strategy::Dstore, Strategy::Live]
         };
         // println!("strategy: {:?}", strats);
 
@@ -171,8 +162,27 @@ pub mod fffs {
         result.unwrap_or_else(|| PathResult::new(path).error("No strategy worked".to_string()))
     }
 
-    pub fn get_fffs(path: &PathBuf) -> Result<i64, String> {
-        let rr = process_path(path, vec![Strategy::Dstore, Strategy::Aev, Strategy::Live]);
+    pub fn parse_strategy(strat_str: &str) -> Vec<Strategy> {
+        let mut strategies = vec![];
+        for strat in strat_str.split(',') {
+            match strat.to_lowercase().as_str() {
+                "aev" => strategies.push(Strategy::Aev),
+                "dstore" => strategies.push(Strategy::Dstore),
+                "live" => strategies.push(Strategy::Live),
+                "osa" => strategies.push(Strategy::Osa),
+                _ => (),
+            }
+        }
+        if strategies.len() == 0 {
+            strategies.push(Strategy::Aev);
+            strategies.push(Strategy::Dstore);
+            strategies.push(Strategy::Live);
+        }
+        strategies
+    }
+
+    pub fn get_fffs(path: &PathBuf, dx_opts: String) -> Result<i64, String> {
+        let rr = process_path(path, parse_strategy(&dx_opts));
         match rr.error_message {
             Some(err) => Err(err),
             None => Ok(rr.size),

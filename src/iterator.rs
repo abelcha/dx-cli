@@ -156,7 +156,8 @@ pub fn process_paths(paths: Vec<PathBuf>) {
         })
         .collect::<Vec<PathResult>>();
     if (config::ArgOpts.sort) {
-        mapped_results.iter()
+        mapped_results
+            .iter()
             .enumerate()
             .sorted_by_key(|&(_, p)| p.size)
             .for_each(|(index, path_result)| pretty_print(index, path_result));
