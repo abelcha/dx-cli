@@ -4,7 +4,7 @@
 _originaly made for [eza](https://github.com/eza-community/eza) `--total-size`, but cant make it build cross-plarform, so it just work standalone on mac m1 as of now_
 
 
-du vs dx:
+`du` vs `dx`:
 ![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
 
 
@@ -12,7 +12,7 @@ du vs dx:
 
 How can finder display dir sizes instantly, but in userland it takes forever to walk through the file tree?
 
-Its ovbious macos caches dir sizes somewhere but Apple dont provide any api or document this feature
+Its ovbious macos caches dir sizes somewhere but [Apple dont expose any api or document this](https://developer.apple.com/documentation/foundation)
 
 
 It's only accessible through AppleScript's `getinfo` methods, which I've made the first version with. However, it's slow and requires spawning a new process for each call. so this is what i came up with:
