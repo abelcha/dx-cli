@@ -1,9 +1,7 @@
 
 
 
-originaly made to improve perfs on eza[https://github.com/eza-community/eza] `--total-size`, but multi platform build is such a mess, it ll just a m1 mac now
-
-_experimental disclaimer_
+_originaly made for [eza](https://github.com/eza-community/eza) `--total-size`, but cant make it build cross-plarform, so it just work standalone on mac m1 as of now_
 
 ![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
 
@@ -29,7 +27,7 @@ The system provides three strategies that will fallback the following order by d
 1. **AEV (AppleEvents)**: A long-forgotten IPC protocol using C with Pascal strings. It works well but sometimes fails on concurrent calls.
 2. **Dstore**: `.ds_store` are binary dumps of Finder's internal database. Finder regenerates it even if the AEV call fails, so the combination of the two is surprisingly reliable. 
 
-_Few parser attempts have been made since [the OG chad that first reverse-engineered it][https://0day.work/parsing-the-ds_store-file-format/], but on some more recent osx version it fails attempting to parse the entire B-tree_
+_Few parser attempts have been made since [the OG chad that first reverse-engineered it](https://0day.work/parsing-the-ds_store-file-format/), but on some more recent osx version it fails attempting to parse the entire B-tree_
 
 _I've made a simpler implementation that only focuses on 1st level size and dates metadata and works on every `.ds_store` found in GitHub Code Search._
 _its available in the lib as  `dstore_parser`_
