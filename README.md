@@ -35,6 +35,7 @@ The system provides three strategies that will fallback the following order by d
 
 
 _Few parser attempts have been made since [the OG chad that first reverse-engineered it](https://0day.work/parsing-the-ds_store-file-format/), but on some more recent osx version it fails attempting to parse the entire B-tree_
+
 _I've made a simpler implementation that only focuses on 1st level size and dates metadata and works on every `.ds_store` found in GitHub Code Search._
 _its available in the lib as  `dstore_parser`_
 
