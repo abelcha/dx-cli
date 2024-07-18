@@ -1,5 +1,8 @@
 
 
+
+originaly made to improve perfs on eza[https://github.com/eza-community/eza] `--total-size`, but multi platform build is such a mess, it ll just a m1 mac now
+
 _experimental disclaimer_
 
 ![output](https://github.com/abelcha/dx-cli/assets/6186996/9f5f01de-dae6-4e02-a706-15c24c3fffa3)
