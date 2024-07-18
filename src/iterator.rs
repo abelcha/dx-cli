@@ -33,25 +33,38 @@ pub fn pad_start(s: &str, target_length: usize, pad_char: char) -> String {
     format!("{}{}", padding, s)
 }
 
+fn color_size(sizestr: &str, size: i64) -> String {
+    // if (size < 1024 * 1024) {
+    //     return color_print::cformat!("<dim>{}</dim>", sizestr);
+    // }
+    // if (size < 1024 * 1024 * 1024) {
+    //     return color_print::cformat!("{}", sizestr);
+    // }
+    return sizestr.to_string();
+}
+
 fn format_size(size: i64) -> String {
-    if (config::ArgOpts.bytes) {
-        return size.to_string();
-    }
-    if (size < 0) {
-        return "KO".to_string();
-    }
-    let size_formatted = ByteSize::b(size as u64).to_string();
-    let mut rtn = size_formatted.replace('B', "").replace(' ', "");
-    if rtn.len() >= 5 {
-        let re = Regex::new(r"\.[0-9]+").unwrap();
-        rtn = re.replace(&rtn, "").into_owned();
-    }
-    if rtn.parse::<f64>().is_ok() {
-        if (rtn.len() <= 3) {
-            rtn = format!("{}B", rtn);
+    match config::ArgOpts.bytes {
+        true => size.to_string(),
+        false => {
+            if size < 0 {
+                return "KO".to_string();
+            } else {
+                let size_formatted = ByteSize::b(size as u64).to_string();
+                let mut rtn = size_formatted.replace('B', "").replace(' ', "");
+                if rtn.len() >= 5 {
+                    let re = Regex::new(r"\.[0-9]+").unwrap();
+                    rtn = re.replace(&rtn, "").into_owned();
+                }
+                if rtn.parse::<f64>().is_ok() {
+                    if rtn.len() <= 3 {
+                        rtn = format!("{}B", rtn);
+                    }
+                }
+                return rtn
+            }
         }
     }
-    return rtn;
 }
 
 fn format_path(abs_path: &PathBuf, index: usize) -> String {

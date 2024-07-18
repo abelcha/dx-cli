@@ -6,9 +6,22 @@ use structopt::StructOpt;
 use strum::{EnumString, EnumVariantNames, VariantNames};
 use strum_macros::Display;
 
+
+
+const DEFAULT: &str = "auto";
+
 #[derive(StructOpt, Debug)]
 #[structopt(name = "dx")]
 pub struct Opt {
+
+    #[structopt(
+        long,
+        possible_values = ColorMode::VARIANTS,
+        case_insensitive = true,
+        default_value = DEFAULT,
+    )]
+    color: ColorMode,
+
     /// List
     #[structopt(short, long)]
     pub list: bool,
@@ -43,13 +56,21 @@ pub struct Opt {
         )]
     pub strategy: Vec<Strategy>,
 
-
     #[structopt(short, long)]
     pub verbose: bool,
 
     /// Paths
     #[structopt(name = "PATH", parse(from_os_str), default_value = "./")]
     pub paths: Vec<PathBuf>,
+}
+
+#[derive(EnumString, Debug)]
+#[derive(VariantNames)]
+#[strum(serialize_all = "kebab_case")]
+enum ColorMode {
+    Auto,
+    Always,
+    Never,
 }
 
 #[derive(EnumString, VariantNames, Debug, Display, Clone, Copy)]
